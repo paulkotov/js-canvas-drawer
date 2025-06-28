@@ -7,12 +7,19 @@ const decreaseButton = document.getElementById("decrease");
 const sizeElement = document.getElementById("size");
 const colorElement = document.getElementById("color");
 const clearElement = document.getElementById("clear");
+const lineButton = document.getElementById("line");
+const circleButton = document.getElementById("circle");
+const rectangleButton = document.getElementById("rectangle"); 
 
 let size = 10;
 let color = "black";
 let x;
 let y;
 let isPressed = false;
+// drawing mode
+let currentMode = null; // 'line', 'circle', 'rectangle', etc.
+let drawing = false;
+let startX = 0, startY = 0;
 
 const drawCircle = (x, y) => {
   ctx.beginPath();
@@ -69,6 +76,21 @@ decreaseButton.addEventListener("click", () => {
 
 colorElement.addEventListener("change", (e) => (color = e.target.value));
 
+lineButton.addEventListener("click", () => {
+  currentMode = 'line';
+  canvas.style.cursor = 'crosshair';
+});
+
+circleButton.addEventListener("click", () => {
+  currentMode = 'circle';
+  canvas.style.cursor = 'pointer';
+});
+
+rectangleButton.addEventListener("click", () => {
+  currentMode = 'rectangle';
+  canvas.style.cursor = 'crosshair';
+});
+
 clearElement.addEventListener("click", () =>
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 );
@@ -123,3 +145,4 @@ canvas.addEventListener("mousemove", (e) => {
   }
 });
 
+// add event listeners for buttons 
