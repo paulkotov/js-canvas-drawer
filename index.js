@@ -21,22 +21,6 @@ let currentMode = null; // 'line', 'circle', 'rectangle', etc.
 let drawing = false;
 let startX = 0, startY = 0;
 
-const drawCircle = (x, y) => {
-  ctx.beginPath();
-  ctx.arc(x, y, size, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
-};
-
-const drawLine = (x1, y1, x2, y2) => {
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.strokeStyle = color;
-  ctx.lineWidth = size * 2;
-  ctx.stroke();
-};
-
 const updateSizeOnScreen = () => (sizeElement.innerText = size);
 
 canvas.addEventListener("mousedown", (e) => {
@@ -83,7 +67,7 @@ lineButton.addEventListener("click", () => {
 
 circleButton.addEventListener("click", () => {
   currentMode = 'circle';
-  canvas.style.cursor = 'pointer';
+  canvas.style.cursor = 'crosshair';
 });
 
 rectangleButton.addEventListener("click", () => {
@@ -96,18 +80,21 @@ clearElement.addEventListener("click", () =>
 );
 
 // drawing methods
-function drawLine(x1, y1, x2, y2) {
+function drawCircle (x, y) {
+  ctx.beginPath();
+  ctx.arc(x, y, size, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+};
+
+function drawLine (x1, y1, x2, y2) {
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = size * 2;
   ctx.stroke();
-}
-
-function drawCircle(x, y, radius) {
-  ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
-  ctx.stroke();
-}
+};
 
 function drawRectangle(x, y, width, height) {
   ctx.beginPath();
@@ -121,28 +108,3 @@ function drawText(text, x, y) {
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
-
-canvas.addEventListener("mousedown", (e) => {
-  isPressed = true;
-  x = e.offsetX;
-  y = e.offsetY;
-});
-
-canvas.addEventListener("mouseup", (e) => {
-  isPressed = false;
-  x = undefined;
-  y = undefined;
-});
-
-canvas.addEventListener("mousemove", (e) => {
-  if (isPressed) {
-    x2 = e.offsetX;
-    y2 = e.offsetY;
-    drawCircle(x2, y2);
-    drawLine(x, y, x2, y2);
-    x = x2;
-    y = y2;
-  }
-});
-
-// add event listeners for buttons 
