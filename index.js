@@ -31,7 +31,6 @@ canvas.addEventListener("mousedown", (e) => {
   x = startX;
   y = startY;
   
-  // Store the current canvas state for preview functionality
   if (currentMode !== 'freehand') {
     imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   }
@@ -42,7 +41,6 @@ canvas.addEventListener("mouseup", (e) => {
     const endX = e.offsetX;
     const endY = e.offsetY;
     
-    // Draw the final shape based on current mode
     switch (currentMode) {
       case 'line':
         drawLine(startX, startY, endX, endY);
