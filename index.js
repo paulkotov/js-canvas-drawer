@@ -7,7 +7,21 @@ const colorElement = document.getElementById("color");
 const clearElement = document.getElementById("clear");
 const lineButton = document.getElementById("line");
 const circleButton = document.getElementById("circle");
-const rectangleButton = document.getElementById("rectangle"); 
+const rectangleButton = document.getElementById("rectangle");
+const backgroundButton = document.getElementById("background");
+
+// Background modal elements
+const backgroundModal = document.getElementById("backgroundModal");
+const closeModalBtn = document.getElementById("closeModal");
+const applyBackgroundBtn = document.getElementById("applyBackground");
+const cancelBackgroundBtn = document.getElementById("cancelBackground");
+const backgroundTypeRadios = document.querySelectorAll('input[name="backgroundType"]');
+const solidColorInput = document.getElementById("solidColor");
+const gradientTypeSelect = document.getElementById("gradientType");
+const gradientColor1Input = document.getElementById("gradientColor1");
+const gradientColor2Input = document.getElementById("gradientColor2");
+const gradientAngleSelect = document.getElementById("gradientAngle");
+const gradientDirectionDiv = document.getElementById("gradientDirection"); 
 
 let size = 10;
 let color = "black";
@@ -20,9 +34,61 @@ let drawing = false;
 let startX = 0, startY = 0;
 let imageData; // Store canvas state for preview
 
+// Background settings
+let currentBackground = {
+  type: 'none', // 'none', 'solid', 'gradient'
+  solidColor: '#ffffff',
+  gradientType: 'linear', // 'linear', 'radial'
+  gradientColors: ['#667eea', '#764ba2'],
+  gradientAngle: 135
+};
+
 function resizeCanvas() {
+  // Store current drawing
+  const currentDrawing = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+  
+  // Apply background and restore drawing
+  applyCurrentBackground();
+  if (currentDrawing.width > 0 && currentDrawing.height > 0) {
+    ctx.putImageData(currentDrawing, 0, 0);
+  }
+}
+
+function applyCurrentBackground() {
+  if (currentBackground.type === 'solid') {
+    ctx.fillStyle = currentBackground.solidColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else if (currentBackground.type === 'gradient') {
+    let gradient;
+    
+    if (currentBackground.gradientType === 'linear') {
+      // Calculate gradient direction based on angle
+      const angle = (currentBackground.gradientAngle * Math.PI) / 180;
+      const x1 = canvas.width / 2 - Math.cos(angle) * canvas.width / 2;
+      const y1 = canvas.height / 2 - Math.sin(angle) * canvas.height / 2;
+      const x2 = canvas.width / 2 + Math.cos(angle) * canvas.width / 2;
+      const y2 = canvas.height / 2 + Math.sin(angle) * canvas.height / 2;
+      
+      gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+    } else {
+      // Radial gradient
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.max(canvas.width, canvas.height) / 2;
+      
+      gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+    }
+    
+    gradient.addColorStop(0, currentBackground.gradientColors[0]);
+    gradient.addColorStop(1, currentBackground.gradientColors[1]);
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  // If type is 'none', do nothing (transparent background)
 }
 
 resizeCanvas();
@@ -138,9 +204,108 @@ rectangleButton.addEventListener("click", () => {
   canvas.style.cursor = 'crosshair';
 });
 
-clearElement.addEventListener("click", () =>
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-);
+clearElement.addEventListener("click", () => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  applyCurrentBackground();
+});
+
+// Background modal event listeners
+backgroundButton.addEventListener("click", () => {
+  backgroundModal.style.display = 'block';
+  updateModalFromCurrentBackground();
+});
+
+closeModalBtn.addEventListener("click", () => {
+  backgroundModal.style.display = 'none';
+});
+
+cancelBackgroundBtn.addEventListener("click", () => {
+  backgroundModal.style.display = 'none';
+});
+
+// Close modal when clicking outside
+backgroundModal.addEventListener("click", (e) => {
+  if (e.target === backgroundModal) {
+    backgroundModal.style.display = 'none';
+  }
+});
+
+applyBackgroundBtn.addEventListener("click", () => {
+  updateBackgroundFromModal();
+  applyCurrentBackground();
+  backgroundModal.style.display = 'none';
+});
+
+// Show/hide gradient controls based on selected background type
+backgroundTypeRadios.forEach(radio => {
+  radio.addEventListener("change", (e) => {
+    const gradientControls = document.querySelector('.gradient-controls');
+    const colorInput = document.getElementById('solidColor');
+    
+    if (e.target.value === 'gradient') {
+      gradientControls.style.display = 'flex';
+      colorInput.style.display = 'none';
+    } else if (e.target.value === 'solid') {
+      gradientControls.style.display = 'none';
+      colorInput.style.display = 'block';
+    } else {
+      gradientControls.style.display = 'none';
+      colorInput.style.display = 'none';
+    }
+  });
+});
+
+// Show/hide gradient direction based on gradient type
+gradientTypeSelect.addEventListener("change", (e) => {
+  if (e.target.value === 'radial') {
+    gradientDirectionDiv.style.display = 'none';
+  } else {
+    gradientDirectionDiv.style.display = 'flex';
+  }
+});
+
+function updateModalFromCurrentBackground() {
+  // Set background type radio
+  const typeRadio = document.querySelector(`input[name="backgroundType"][value="${currentBackground.type}"]`);
+  if (typeRadio) {
+    typeRadio.checked = true;
+  }
+  
+  // Update solid color
+  solidColorInput.value = currentBackground.solidColor;
+  
+  // Update gradient settings
+  gradientTypeSelect.value = currentBackground.gradientType;
+  gradientColor1Input.value = currentBackground.gradientColors[0];
+  gradientColor2Input.value = currentBackground.gradientColors[1];
+  gradientAngleSelect.value = currentBackground.gradientAngle;
+  
+  // Show/hide appropriate controls
+  const gradientControls = document.querySelector('.gradient-controls');
+  const colorInput = document.getElementById('solidColor');
+  
+  if (currentBackground.type === 'gradient') {
+    gradientControls.style.display = 'flex';
+    colorInput.style.display = 'none';
+    gradientDirectionDiv.style.display = currentBackground.gradientType === 'radial' ? 'none' : 'flex';
+  } else if (currentBackground.type === 'solid') {
+    gradientControls.style.display = 'none';
+    colorInput.style.display = 'block';
+  } else {
+    gradientControls.style.display = 'none';
+    colorInput.style.display = 'none';
+  }
+}
+
+function updateBackgroundFromModal() {
+  const selectedType = document.querySelector('input[name="backgroundType"]:checked').value;
+  
+  currentBackground.type = selectedType;
+  currentBackground.solidColor = solidColorInput.value;
+  currentBackground.gradientType = gradientTypeSelect.value;
+  currentBackground.gradientColors = [gradientColor1Input.value, gradientColor2Input.value];
+  currentBackground.gradientAngle = parseInt(gradientAngleSelect.value);
+}
 
 // drawing methods
 function drawFreehandCircle(x, y) {
@@ -191,4 +356,5 @@ function drawText(text, x, y) {
 
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  applyCurrentBackground();
 }
