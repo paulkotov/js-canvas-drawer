@@ -5,6 +5,7 @@ const decreaseButton = document.getElementById("decrease");
 const sizeElement = document.getElementById("size");
 const colorElement = document.getElementById("color");
 const clearElement = document.getElementById("clear");
+const saveButton = document.getElementById("save");
 const lineButton = document.getElementById("line");
 const circleButton = document.getElementById("circle");
 const rectangleButton = document.getElementById("rectangle");
@@ -209,6 +210,10 @@ clearElement.addEventListener("click", () => {
   applyCurrentBackground();
 });
 
+saveButton.addEventListener("click", () => {
+  saveCanvasAsPNG();
+});
+
 // Background modal event listeners
 backgroundButton.addEventListener("click", () => {
   backgroundModal.style.display = 'block';
@@ -357,4 +362,75 @@ function drawText(text, x, y) {
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   applyCurrentBackground();
+}
+
+function createCanvasWithBackground(sourceCanvas, addWhiteBackground = false) {
+  const tempCanvas = document.createElement('canvas');
+  const tempCtx = tempCanvas.getContext('2d');
+  tempCanvas.width = sourceCanvas.width;
+  tempCanvas.height = sourceCanvas.height;
+  
+  if (addWhiteBackground) {
+    tempCtx.fillStyle = '#ffffff';
+    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+  }
+  
+  tempCtx.drawImage(sourceCanvas, 0, 0);
+  return tempCanvas;
+}
+
+function createOffscreenCanvasWithBackground(sourceCanvas, addWhiteBackground = false) {
+  const offscreen = new OffscreenCanvas(sourceCanvas.width, sourceCanvas.height);
+  const offscreenCtx = offscreen.getContext('2d');
+  
+  if (addWhiteBackground) {
+    offscreenCtx.fillStyle = '#ffffff';
+    offscreenCtx.fillRect(0, 0, sourceCanvas.width, sourceCanvas.height);
+  }
+  
+  offscreenCtx.drawImage(sourceCanvas, 0, 0);
+  return offscreen;
+}
+
+function downloadCanvas(canvasElement, fileName) {
+  const dataURL = canvasElement.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.download = fileName;
+  link.href = dataURL;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = fileName;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+async function saveCanvasAsPNG() {
+  const fileName = `drawing-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+  const needsWhiteBackground = currentBackground.type === 'none';
+  
+  if (typeof OffscreenCanvas === 'undefined') {
+    const tempCanvas = createCanvasWithBackground(canvas, needsWhiteBackground);
+    downloadCanvas(tempCanvas, fileName);
+    return;
+  }
+
+  try {
+    const offscreen = createOffscreenCanvasWithBackground(canvas, needsWhiteBackground);
+    const blob = await offscreen.convertToBlob({ type: 'image/png' });
+    downloadBlob(blob, fileName);
+  } catch (error) {
+    console.error('Error saving canvas with OffscreenCanvas:', error);
+    // Fallback to DOM canvas method
+    const tempCanvas = createCanvasWithBackground(canvas, needsWhiteBackground);
+    downloadCanvas(tempCanvas, fileName);
+  }
 }
